@@ -1,6 +1,7 @@
 # ZenGarden
 
-Zendesk-style simulator built with Next.js + Supabase.
+Zendesk-style ticketing simulator built with Next.js + Supabase.
+Develop portfolio projects with a ticketing system in the pipeline, great for BI automations, datavisualization piplines, analytics workflows. All with areas to show off backend code in a functional front end.
 
 ## 30-Second Quickstart
 

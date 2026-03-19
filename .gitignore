@@ -1,3 +1,11 @@
 node_modules/
 .next/
 .env.local
+
+# Local environment files (never commit secrets)
+.env
+.env.*
+.env.*.local
+
+# Keep the template in git
+!.env.example

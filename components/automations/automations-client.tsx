@@ -8,7 +8,7 @@ import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 type AutomationRuleRow = { id: string; name: string; trigger_event: string; is_active: boolean; condition: any; actions: any };
 type TicketRow = { id: string; status: string };
 
-export function AutomationsClient() {
+export function AutomationsClient({ canTrigger }: { canTrigger: boolean }) {
   const [busy, setBusy] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
   const [rules, setRules] = React.useState<AutomationRuleRow[]>([]);
@@ -44,9 +44,7 @@ export function AutomationsClient() {
     setError(null);
     setBusy(true);
     try {
-      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-      if (!supabaseUrl) throw new Error("Missing NEXT_PUBLIC_SUPABASE_URL");
-      const res = await fetch(`${supabaseUrl}/functions/v1/automation-execute`, {
+      const res = await fetch(`/api/v2/admin/automation-execute`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ ticket_id: ticketId, event_name: rule.trigger_event })
@@ -100,7 +98,7 @@ export function AutomationsClient() {
                   </div>
                   <Button
                     variant="secondary"
-                    disabled={busy || !firstRule.is_active}
+                    disabled={busy || !canTrigger || !firstRule.is_active}
                     onClick={() => void triggerRuleOnTicket(firstRule, t.id)}
                   >
                     Trigger

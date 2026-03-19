@@ -57,6 +57,12 @@ export default function LoginPage() {
         <h1 className="mb-2 text-xl font-semibold">Log in</h1>
         <p className="mb-4 text-sm text-muted-foreground">Use your Admin/Agent credentials.</p>
 
+        <div className="mb-4 rounded border border-yellow-500/40 bg-yellow-500/10 p-3 text-sm text-yellow-900">
+          <div className="font-medium">Demo login (read-only)</div>
+          <div className="mt-1 text-xs text-yellow-900/80">Email: demo@zengarden.dummy</div>
+          <div className="text-xs text-yellow-900/80">Password: Demo1234!</div>
+        </div>
+
         <form className="space-y-4" onSubmit={onSubmit}>
           <div className="space-y-2">
             <Label htmlFor="email">Email</Label>

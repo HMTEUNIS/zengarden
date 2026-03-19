@@ -21,7 +21,11 @@ function parseEventsCsv(csv: string): WebhookEvent[] {
     .filter((s): s is WebhookEvent => allowed.has(s as WebhookEvent));
 }
 
-export function WebhooksClient() {
+export function WebhooksClient({ canWrite }: { canWrite: boolean }) {
+  return <WebhooksClientInternal canWrite={canWrite} />;
+}
+
+function WebhooksClientInternal({ canWrite }: { canWrite: boolean }) {
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
   const [webhooks, setWebhooks] = React.useState<WebhookRow[]>([]);
@@ -111,6 +115,10 @@ export function WebhooksClient() {
 
   async function createWebhook() {
     setError(null);
+    if (!canWrite) {
+      setError("Read-only mode: demo users cannot create webhooks.");
+      return;
+    }
     try {
       const events = parseEventsCsv(createEventsCsv);
       if (!createName.trim()) throw new Error("Name is required");
@@ -145,6 +153,7 @@ export function WebhooksClient() {
     }
 
     try {
+      if (!canWrite) throw new Error("Read-only mode: demo users cannot save inspection snippets.");
       if (!inspectionCode.trim()) throw new Error("Code snippet is required");
 
       const res = await fetch(`/api/v2/admin/webhooks/${selectedWebhookId}/inspection`, {
@@ -267,7 +276,7 @@ export function WebhooksClient() {
                   onChange={(e) => setInspectionCode(e.target.value)}
                   placeholder={`// Example payload for event: ${selectedEvent}\n{ ... }`}
                 />
-                <Button onClick={() => void saveInspection()} disabled={loading} className="w-full">
+        <Button onClick={() => void saveInspection()} disabled={loading || !canWrite} className="w-full">
                   Save inspection snippet
                 </Button>
               </div>
@@ -307,7 +316,7 @@ export function WebhooksClient() {
               <Input value={createSecret} onChange={(e) => setCreateSecret(e.target.value)} />
             </div>
           </div>
-          <Button onClick={() => void createWebhook()} disabled={loading} className="w-full">
+          <Button onClick={() => void createWebhook()} disabled={loading || !canWrite} className="w-full">
             Create webhook
           </Button>
           <div className="text-xs text-muted-foreground">

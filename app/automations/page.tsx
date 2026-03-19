@@ -4,7 +4,8 @@ import { AutomationsClient } from "@/components/automations/automations-client";
 
 export default async function AutomationsPage() {
   const role = await getCurrentUserRole();
-  if (role !== "admin") redirect("/tickets");
-  return <AutomationsClient />;
+  if (role !== "admin" && role !== "demo") redirect("/tickets");
+  const canTrigger = role === "admin";
+  return <AutomationsClient canTrigger={canTrigger} />;
 }
 

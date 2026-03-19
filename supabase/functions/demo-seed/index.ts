@@ -40,8 +40,9 @@ serve(async (req) => {
     if (!resolvedOrgId) throw new Error("Failed to resolve organization id");
 
     const demoUsers = [
-      { email: "admin@zengarden.dev", password: "Admin1234!", role: "admin" as const },
-      { email: "agent@zengarden.dev", password: "Agent1234!", role: "agent" as const }
+      { email: "admin@zengarden.dummy", password: "Admin1234!", role: "admin" as const },
+      { email: "agent@zengarden.dummy", password: "Agent1234!", role: "agent" as const },
+      { email: "demo@zengarden.dummy", password: "Demo1234!", role: "demo" as const }
     ];
 
     for (const u of demoUsers) {

@@ -4,14 +4,16 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 export function getSupabaseServerClient(): SupabaseClient {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!supabaseUrl || !serviceRoleKey) {
-    throw new Error("Missing SUPABASE_SERVICE_ROLE_KEY or NEXT_PUBLIC_SUPABASE_URL");
+  const anonKey =
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+  if (!supabaseUrl || !anonKey) {
+    throw new Error("Missing NEXT_PUBLIC_SUPABASE_URL and publishable default key");
   }
 
   // createServerClient handles storing session cookies for us.
   const cookieStore = cookies();
-  return createServerClient(supabaseUrl, serviceRoleKey, {
+  return createServerClient(supabaseUrl, anonKey, {
     cookies: {
       getAll: () => cookieStore.getAll(),
       setAll: (toSet: Array<{ name: string; value: string; options?: Record<string, unknown> }>) => {
@@ -20,4 +22,5 @@ export function getSupabaseServerClient(): SupabaseClient {
     }
   });
 }
+
 

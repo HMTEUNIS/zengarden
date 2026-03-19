@@ -7,11 +7,12 @@ Zendesk-style simulator built with Next.js + Supabase.
 1. In Supabase SQL Editor, run:
    - `supabase/migrations/0001_init.sql`
    - `supabase/migrations/0002_webhook_inspections.sql`
+   - `supabase/migrations/0003_demo_readonly.sql`
 2. Create `.env.local`:
    ```bash
    NEXT_PUBLIC_SUPABASE_URL=https://YOUR_PROJECT_REF.supabase.co
    NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY=YOUR_PUBLISHABLE_DEFAULT_KEY
-   SUPABASE_SERVICE_ROLE_KEY=YOUR_SERVICE_ROLE_KEY
+# SUPABASE_SERVICE_ROLE_KEY=YOUR_SERVICE_ROLE_KEY (optional; only needed if you run edge functions locally)
    ```
 3. Start the app:
    ```bash
@@ -52,6 +53,7 @@ In Supabase:
 3. Paste and run, in order:
    - `supabase/migrations/0001_init.sql`
    - `supabase/migrations/0002_webhook_inspections.sql`
+   - `supabase/migrations/0003_demo_readonly.sql`
 
 That is the most direct way to create all required tables, triggers, RLS policies, helper functions, and indexes.
 
@@ -62,7 +64,6 @@ Create `.env.local` in project root:
 ```bash
 NEXT_PUBLIC_SUPABASE_URL=https://YOUR_PROJECT_REF.supabase.co
 NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY=YOUR_PUBLISHABLE_DEFAULT_KEY
-SUPABASE_SERVICE_ROLE_KEY=YOUR_SERVICE_ROLE_KEY
 ```
 
 Optional flags:
@@ -87,9 +88,14 @@ Then open `http://localhost:3000`.
 ## 4) First-use flow
 
 1. Sign up at `/signup` (or log in at `/login`)
-2. Open `/admin`
-3. Create/install at least one app (for `/apps/[appId]/settings` testing)
-4. Open `/apps` and then an app's Settings page
+2. Open `/tickets` and click `Seed demo` (creates `admin`, `agent`, and `demo` users)
+3. Open `/admin`
+4. Create/install at least one app (for `/apps/[appId]/settings` testing)
+5. Open `/apps` and then an app's Settings page
+
+Demo credentials (read-only):
+- Email: `demo@zengarden.dummy`
+- Password: `Demo1234!`
 
 ## 5) App settings behavior
 
@@ -122,7 +128,7 @@ If you were expecting `apps.settings_schema`, settings forms are driven by `apps
 
 ## 8) Troubleshooting
 
-- **500 on server API calls**: check `SUPABASE_SERVICE_ROLE_KEY` and `NEXT_PUBLIC_SUPABASE_URL`
+- **500 on server API calls**: check `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY`
 - **Auth redirect loops**: verify anon key/url are correct and auth is configured in Supabase
 - **No apps visible**: create app rows from `/admin`
 - **Settings page shows raw JSON only**: app has no `manifest_json.settings_schema`

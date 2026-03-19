@@ -4,7 +4,8 @@ import { WebhooksClient } from "@/components/webhooks/webhooks-client";
 
 export default async function WebhooksPage() {
   const role = await getCurrentUserRole();
-  if (role !== "admin") redirect("/tickets");
-  return <WebhooksClient />;
+  if (role !== "admin" && role !== "demo") redirect("/tickets");
+  const canWrite = role === "admin";
+  return <WebhooksClient canWrite={canWrite} />;
 }
 

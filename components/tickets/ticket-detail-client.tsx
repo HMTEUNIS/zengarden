@@ -36,7 +36,7 @@ type CommentPayload = {
   created_at: string;
 };
 
-export function TicketDetailClient({ ticketId }: { ticketId: string }) {
+export function TicketDetailClient({ ticketId, canWrite }: { ticketId: string; canWrite: boolean }) {
   const router = useRouter();
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
@@ -49,6 +49,7 @@ export function TicketDetailClient({ ticketId }: { ticketId: string }) {
 
   const [statusSaving, setStatusSaving] = React.useState(false);
   const [statusDraft, setStatusDraft] = React.useState<TicketStatus>("new");
+  const readOnly = !canWrite;
 
   async function load() {
     setLoading(true);
@@ -75,6 +76,10 @@ export function TicketDetailClient({ ticketId }: { ticketId: string }) {
   async function submitReply(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
+    if (readOnly) {
+      setError("Read-only mode: cannot add replies/notes.");
+      return;
+    }
     const parsed = ReplySchema.safeParse({ body: replyBody, is_internal: isInternal });
     if (!parsed.success) {
       setError(parsed.error.issues[0]?.message ?? "Invalid reply");
@@ -102,6 +107,10 @@ export function TicketDetailClient({ ticketId }: { ticketId: string }) {
 
   async function updateStatus() {
     if (!ticket) return;
+    if (readOnly) {
+      setError("Read-only mode: cannot update status.");
+      return;
+    }
     setStatusSaving(true);
     setError(null);
     try {
@@ -171,7 +180,7 @@ export function TicketDetailClient({ ticketId }: { ticketId: string }) {
                 className="h-10 w-full rounded-md border border-border bg-background px-3 text-sm"
                 value={statusDraft}
                 onChange={(e) => setStatusDraft(e.target.value as TicketStatus)}
-                disabled={statusSaving}
+                disabled={statusSaving || readOnly}
               >
                 <option value="new">new</option>
                 <option value="open">open</option>
@@ -179,7 +188,7 @@ export function TicketDetailClient({ ticketId }: { ticketId: string }) {
                 <option value="solved">solved</option>
                 <option value="closed">closed</option>
               </select>
-              <Button onClick={() => void updateStatus()} disabled={statusSaving} className="w-full">
+              <Button onClick={() => void updateStatus()} disabled={statusSaving || readOnly} className="w-full">
                 {statusSaving ? "Updating..." : "Update status"}
               </Button>
             </div>
@@ -189,7 +198,13 @@ export function TicketDetailClient({ ticketId }: { ticketId: string }) {
             <form className="space-y-3" onSubmit={submitReply}>
               <div className="text-sm font-medium">Add reply / note</div>
               <div className="flex items-center gap-2">
-                <input id="internal" type="checkbox" checked={isInternal} onChange={(e) => setIsInternal(e.target.checked)} />
+                <input
+                  id="internal"
+                  type="checkbox"
+                  checked={isInternal}
+                  onChange={(e) => setIsInternal(e.target.checked)}
+                  disabled={savingReply || readOnly}
+                />
                 <Label htmlFor="internal">Internal note</Label>
               </div>
 
@@ -200,11 +215,12 @@ export function TicketDetailClient({ ticketId }: { ticketId: string }) {
                   value={replyBody}
                   onChange={(e) => setReplyBody(e.target.value)}
                   placeholder={isInternal ? "Internal note..." : "Reply to requester..."}
+                  disabled={savingReply || readOnly}
                 />
                 <div className="text-xs text-muted-foreground">Tip: Use new ticket creation + replies to test webhooks/automation.</div>
               </div>
 
-              <Button type="submit" disabled={savingReply} className="w-full">
+              <Button type="submit" disabled={savingReply || readOnly} className="w-full">
                 {savingReply ? "Sending..." : "Send"}
               </Button>
             </form>

@@ -17,7 +17,7 @@ export type Ticket = {
   updated_at: string | null;
 };
 
-export function TicketsClient() {
+export function TicketsClient({ canSeed }: { canSeed: boolean }) {
   const router = useRouter();
   const liveDemoMode = isLiveDemoModeClient();
   const [loading, setLoading] = React.useState(true);
@@ -48,6 +48,10 @@ export function TicketsClient() {
   async function seedDemo() {
     if (liveDemoMode) {
       setError("Live demo mode enabled: demo writes are disabled.");
+      return;
+    }
+    if (!canSeed) {
+      setError("Read-only: demo users cannot seed data.");
       return;
     }
     setError(null);
@@ -85,7 +89,7 @@ export function TicketsClient() {
             </p>
           ) : null}
         </div>
-        <Button onClick={() => void seedDemo()} disabled={loading || liveDemoMode}>
+        <Button onClick={() => void seedDemo()} disabled={loading || liveDemoMode || !canSeed}>
           Seed demo
         </Button>
       </div>

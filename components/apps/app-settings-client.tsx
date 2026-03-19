@@ -41,7 +41,7 @@ function isPlainObject(v: unknown): v is Record<string, unknown> {
   return !!v && typeof v === "object" && !Array.isArray(v);
 }
 
-export function AppSettingsClient({ appId }: { appId: string }) {
+export function AppSettingsClient({ appId, canWrite }: { appId: string; canWrite: boolean }) {
   const [loading, setLoading] = React.useState(true);
   const [saving, setSaving] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
@@ -51,6 +51,7 @@ export function AppSettingsClient({ appId }: { appId: string }) {
   const [settings, setSettings] = React.useState<Record<string, unknown>>({});
   const [rawJson, setRawJson] = React.useState<string>("{}");
   const [mode, setMode] = React.useState<"form" | "json">("form");
+  const readOnly = !canWrite;
 
   async function load() {
     setLoading(true);
@@ -103,6 +104,10 @@ export function AppSettingsClient({ appId }: { appId: string }) {
 
   async function save() {
     setError(null);
+    if (readOnly) {
+      setError("Read-only mode: cannot save app settings.");
+      return;
+    }
     setSaving(true);
     try {
       let toSave: Record<string, unknown> = settings;
@@ -146,7 +151,7 @@ export function AppSettingsClient({ appId }: { appId: string }) {
           <Button variant="secondary" onClick={() => void load()} disabled={loading || saving}>
             Refresh
           </Button>
-          <Button onClick={() => void save()} disabled={loading || saving}>
+          <Button onClick={() => void save()} disabled={loading || saving || readOnly}>
             {saving ? "Saving..." : "Save"}
           </Button>
         </div>
@@ -166,7 +171,11 @@ export function AppSettingsClient({ appId }: { appId: string }) {
                     <div className="text-sm font-medium">{schema?.title ?? "Settings"}</div>
                     {schema?.description ? <div className="text-xs text-muted-foreground">{schema.description}</div> : null}
                   </div>
-                  <Button variant="secondary" onClick={() => setMode(mode === "form" ? "json" : "form")} disabled={saving}>
+                  <Button
+                    variant="secondary"
+                    onClick={() => setMode(mode === "form" ? "json" : "form")}
+                    disabled={saving || readOnly}
+                  >
                     {mode === "form" ? "Edit JSON" : "Edit form"}
                   </Button>
                 </div>
@@ -176,6 +185,7 @@ export function AppSettingsClient({ appId }: { appId: string }) {
                     className="min-h-[360px] w-full rounded-md border border-border bg-background p-2 text-sm font-mono"
                     value={rawJson}
                     onChange={(e) => setRawJson(e.target.value)}
+                    disabled={saving || readOnly}
                   />
                 ) : (
                   <div className="space-y-4">
@@ -199,7 +209,7 @@ export function AppSettingsClient({ appId }: { appId: string }) {
                               className="h-10 w-full rounded-md border border-border bg-background px-3 text-sm"
                               value={typeof currentValue === "string" || typeof currentValue === "number" ? String(currentValue) : ""}
                               onChange={(e) => updateField(key, e.target.value)}
-                              disabled={saving}
+                              disabled={saving || readOnly}
                             >
                               <option value="" disabled>
                                 Select…
@@ -224,7 +234,7 @@ export function AppSettingsClient({ appId }: { appId: string }) {
                                 type="checkbox"
                                 checked={Boolean(currentValue)}
                                 onChange={(e) => updateField(key, e.target.checked)}
-                                disabled={saving}
+                                disabled={saving || readOnly}
                               />
                               <Label htmlFor={key}>
                                 {title}
@@ -248,7 +258,7 @@ export function AppSettingsClient({ appId }: { appId: string }) {
                               type="number"
                               value={typeof currentValue === "number" ? String(currentValue) : currentValue === undefined ? "" : String(currentValue)}
                               onChange={(e) => updateField(key, e.target.value === "" ? null : Number(e.target.value))}
-                              disabled={saving}
+                              disabled={saving || readOnly}
                             />
                             {desc ? <div className="text-xs text-muted-foreground">{desc}</div> : null}
                           </div>
@@ -266,7 +276,7 @@ export function AppSettingsClient({ appId }: { appId: string }) {
                             id={key}
                             value={typeof currentValue === "string" ? currentValue : currentValue === undefined || currentValue === null ? "" : String(currentValue)}
                             onChange={(e) => updateField(key, e.target.value)}
-                            disabled={saving}
+                            disabled={saving || readOnly}
                           />
                           {desc ? <div className="text-xs text-muted-foreground">{desc}</div> : null}
                         </div>
@@ -289,7 +299,7 @@ export function AppSettingsClient({ appId }: { appId: string }) {
                   className="min-h-[360px] w-full rounded-md border border-border bg-background p-2 text-sm font-mono"
                   value={rawJson}
                   onChange={(e) => setRawJson(e.target.value)}
-                  disabled={saving}
+                  disabled={saving || readOnly}
                 />
               </div>
             )

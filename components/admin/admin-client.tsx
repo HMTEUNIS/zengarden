@@ -30,15 +30,16 @@ function parseEventsCsv(csv: string) {
     .filter(Boolean);
 }
 
-export function AdminClient() {
+export function AdminClient({ canWrite }: { canWrite: boolean }) {
   const [busy, setBusy] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
   const [organizationId, setOrganizationId] = React.useState<string | null>(null);
   const liveDemoMode = isLiveDemoModeClient();
+  const readOnly = liveDemoMode || !canWrite;
 
-  if (liveDemoMode) {
+  if (readOnly) {
     // eslint-disable-next-line no-console
-    console.info("Live demo mode enabled: admin write actions disabled.");
+    console.info("ZenGarden read-only mode enabled: admin write actions disabled.");
   }
 
   const [users, setUsers] = React.useState<UserRow[]>([]);
@@ -76,7 +77,7 @@ export function AdminClient() {
   const [appSettingsJson, setAppSettingsJson] = React.useState("{\n  \"example\": true\n}");
 
   // Email config form
-  const [emailSupportEmail, setEmailSupportEmail] = React.useState("support@zengarden.dev");
+  const [emailSupportEmail, setEmailSupportEmail] = React.useState("support@zengarden.dummy");
   const [imapHost, setImapHost] = React.useState("imap.gmail.com");
   const [imapPort, setImapPort] = React.useState(993);
   const [smtpHost, setSmtpHost] = React.useState("smtp.gmail.com");
@@ -135,10 +136,10 @@ export function AdminClient() {
 
   async function createWebhook() {
     setError(null);
+    if (readOnly) throw new Error("Read-only mode: demo users cannot write.");
     const supabase = getSupabaseBrowserClient();
     setBusy(true);
     try {
-      if (liveDemoMode) throw new Error("Live demo mode enabled: webhook writes disabled.");
       if (!organizationId) throw new Error("Missing organization id");
       const events = parseEventsCsv(whEvents);
       const { error: wErr } = await supabase.from("webhooks").insert({
@@ -160,10 +161,10 @@ export function AdminClient() {
 
   async function createAutomation() {
     setError(null);
+    if (readOnly) throw new Error("Read-only mode: demo users cannot write.");
     const supabase = getSupabaseBrowserClient();
     setBusy(true);
     try {
-      if (liveDemoMode) throw new Error("Live demo mode enabled: automation writes disabled.");
       if (!organizationId) throw new Error("Missing organization id");
       const cond: any = {};
       if (condStatus.trim()) cond.status = condStatus.trim();
@@ -199,10 +200,10 @@ export function AdminClient() {
 
   async function installApp() {
     setError(null);
+    if (readOnly) throw new Error("Read-only mode: demo users cannot write.");
     const supabase = getSupabaseBrowserClient();
     setBusy(true);
     try {
-      if (liveDemoMode) throw new Error("Live demo mode enabled: app install writes disabled.");
       if (!organizationId) throw new Error("Missing organization id");
       const manifestJson = appSettingsJson.trim() ? JSON.parse(appSettingsJson) : {};
       const { error: iErr } = await supabase.from("apps").insert({
@@ -224,10 +225,10 @@ export function AdminClient() {
 
   async function upsertEmailConfig() {
     setError(null);
+    if (readOnly) throw new Error("Read-only mode: demo users cannot write.");
     const supabase = getSupabaseBrowserClient();
     setBusy(true);
     try {
-      if (liveDemoMode) throw new Error("Live demo mode enabled: email config writes disabled.");
       if (!organizationId) throw new Error("Missing organization id");
       const { error: eErr } = await supabase.from("email_config").upsert(
         {
@@ -266,9 +267,9 @@ export function AdminClient() {
         </div>
       </div>
 
-      {liveDemoMode ? (
+      {readOnly ? (
         <div className="mb-4 rounded border border-yellow-500/40 bg-yellow-500/10 p-3 text-sm text-yellow-900">
-          Live demo mode is ON. Admin write actions are disabled.
+          ZenGarden is in read-only mode. Admin write actions are disabled.
         </div>
       ) : null}
 
@@ -319,7 +320,7 @@ export function AdminClient() {
               <Input value={whTargetUrl} onChange={(e) => setWhTargetUrl(e.target.value)} />
               <Label>Secret</Label>
               <Input value={whSecret} onChange={(e) => setWhSecret(e.target.value)} />
-              <Button onClick={() => void createWebhook()} disabled={busy} className="w-full">
+              <Button onClick={() => void createWebhook()} disabled={busy || readOnly} className="w-full">
                 Create webhook
               </Button>
             </div>
@@ -393,7 +394,7 @@ export function AdminClient() {
                 </div>
               </div>
 
-              <Button onClick={() => void createAutomation()} disabled={busy} className="w-full">
+              <Button onClick={() => void createAutomation()} disabled={busy || readOnly} className="w-full">
                 Create automation
               </Button>
             </div>
@@ -430,7 +431,7 @@ export function AdminClient() {
               <Input value={appIframeUrl} onChange={(e) => setAppIframeUrl(e.target.value)} />
               <Label>manifest.json (JSON)</Label>
               <textarea className="min-h-[120px] w-full rounded-md border border-border bg-background p-2 text-sm" value={appSettingsJson} onChange={(e) => setAppSettingsJson(e.target.value)} />
-              <Button onClick={() => void installApp()} disabled={busy} className="w-full">
+              <Button onClick={() => void installApp()} disabled={busy || readOnly} className="w-full">
                 Install app
               </Button>
             </div>
@@ -481,7 +482,7 @@ export function AdminClient() {
               <Input value={smtpUsername} onChange={(e) => setSmtpUsername(e.target.value)} />
               <Label>Password secret</Label>
               <Input value={smtpPasswordSecret} onChange={(e) => setSmtpPasswordSecret(e.target.value)} type="password" />
-              <Button onClick={() => void upsertEmailConfig()} disabled={busy} className="w-full">
+              <Button onClick={() => void upsertEmailConfig()} disabled={busy || readOnly} className="w-full">
                 Save email config
               </Button>
             </div>

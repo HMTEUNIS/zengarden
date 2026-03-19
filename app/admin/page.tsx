@@ -4,7 +4,8 @@ import { AdminClient } from "@/components/admin/admin-client";
 
 export default async function AdminPage() {
   const role = await getCurrentUserRole();
-  if (role !== "admin") redirect("/tickets");
-  return <AdminClient />;
+  if (role !== "admin" && role !== "demo") redirect("/tickets");
+  const canWrite = role === "admin";
+  return <AdminClient canWrite={canWrite} />;
 }
 

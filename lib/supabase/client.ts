@@ -10,8 +10,9 @@ export function getSupabaseBrowserClient(): SupabaseClient {
   if (client) return client;
 
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-  if (!url || !anonKey) throw new Error("Missing NEXT_PUBLIC_SUPABASE_URL/ANON_KEY");
+  const anonKey =
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  if (!url || !anonKey) throw new Error("Missing NEXT_PUBLIC_SUPABASE_URL and publishable default key");
 
   client = createBrowserClient(url, anonKey);
 

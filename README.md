@@ -1,7 +1,6 @@
 # ZenGarden
 
-Zendesk-style ticketing simulator built with Next.js + Supabase.
-Develop portfolio projects with a ticketing system in the pipeline, great for BI automations, datavisualization piplines, analytics workflows. All with areas to show off backend code in a functional front end.
+Zendesk-style simulator built with Next.js + Supabase.
 
 ## 30-Second Quickstart
 
@@ -11,7 +10,7 @@ Develop portfolio projects with a ticketing system in the pipeline, great for BI
 2. Create `.env.local`:
    ```bash
    NEXT_PUBLIC_SUPABASE_URL=https://YOUR_PROJECT_REF.supabase.co
-   NEXT_PUBLIC_SUPABASE_ANON_KEY=YOUR_ANON_KEY
+   NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY=YOUR_PUBLISHABLE_DEFAULT_KEY
    SUPABASE_SERVICE_ROLE_KEY=YOUR_SERVICE_ROLE_KEY
    ```
 3. Start the app:
@@ -62,7 +61,7 @@ Create `.env.local` in project root:
 
 ```bash
 NEXT_PUBLIC_SUPABASE_URL=https://YOUR_PROJECT_REF.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=YOUR_ANON_KEY
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY=YOUR_PUBLISHABLE_DEFAULT_KEY
 SUPABASE_SERVICE_ROLE_KEY=YOUR_SERVICE_ROLE_KEY
 ```
 
@@ -132,7 +131,7 @@ If you were expecting `apps.settings_schema`, settings forms are driven by `apps
 
 ZenGarden is intentionally minimal: it is a foundation, not a complete product. Fork it to build custom support platforms like:
 
-- GreatRX: pharmacy support + inventory workflows
+- Demos of business intelligence software
 - Internal helpdesk tools with organization-specific fields
 - Custom support portals for your own integrations
 

@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
 import { requireAuth } from "@/lib/api/require-auth";
-import { dispatchTicketEventToAutomation, dispatchTicketEventToWebhooks, type TicketEvent } from "@/lib/webhooks/dispatch";
+import { dispatchTicketSideEffects, type TicketEvent } from "@/lib/webhooks/dispatch";
 import { inferTicketEventFromUpdate, isAllowedStatusTransition } from "@/lib/tickets/workflow";
 import type { TicketPriority, TicketStatus } from "@/lib/tickets/types";
 
@@ -126,8 +126,11 @@ export async function PATCH(req: Request, { params }: { params: { ticketId: stri
     updatedFields
   );
 
-  await dispatchTicketEventToWebhooks({ organizationId: me.organization_id, ticketId: params.ticketId, event });
-  await dispatchTicketEventToAutomation({ ticketId: params.ticketId, event });
+  await dispatchTicketSideEffects({
+    organizationId: me.organization_id,
+    ticketId: params.ticketId,
+    event
+  });
 
   return NextResponse.json({ ok: true, event }, { status: 200 });
 }

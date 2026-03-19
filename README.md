@@ -126,6 +126,37 @@ The settings page tries to build a form from:
 
 If `settings_schema` is missing, the page falls back to a raw JSON editor.
 
+## 5b) Embedding Retool and Google Sheets (Apps)
+
+ZenGarden loads apps in a **sandboxed iframe** (`/apps/[appId]`). Third-party tools only work if **their product allows embedding** in your context (some BI tools block iframes entirely).
+
+### Retool (recommended)
+
+Retool generally works well in ZenGarden’s iframe.
+
+**From the UI (admin):** open **Apps**, click the **+** button, choose **Retool**, then either:
+
+1. **Full app URL** — paste something like `https://your-team.retool.com/apps/<uuid>` (use this for custom domains or non-`retool.com` hosts), or  
+2. **Team subdomain + app path** — e.g. subdomain `acme` and path `apps/<uuid>` → stored as `https://acme.retool.com/apps/<uuid>`.
+
+You still need to be able to open that URL when logged into Retool (or use Retool’s sharing/embed options if you use them).
+
+**Manual / Admin:** insert an `apps` row with `iframe_url` set to your Retool app URL, same as above.
+
+### Google Sheets
+
+Sheets often **do** embed; sharing must allow whoever views ZenGarden to open the doc.
+
+**From the UI (admin):** **Apps** → **+** → **Google Sheets**. Paste the full spreadsheet link (or the ID from `.../spreadsheets/d/<ID>/...`). ZenGarden stores an embed-style URL:
+
+`https://docs.google.com/spreadsheets/d/<ID>/edit?rm=minimal&widget=true&headers=false`
+
+If the iframe is blank, check **File → Share** in Google Sheets and browser console for `X-Frame-Options` / CSP messages.
+
+### Other tools (e.g. Looker / Looker Studio)
+
+Many analytics products **refuse to render inside arbitrary iframes**. For those, use **Open in new tab** workflows in your fork or link out instead of embedding.
+
 ## 6) Notes on current schema vs naming
 
 Current schema includes:
@@ -136,7 +167,7 @@ If you were expecting `apps.settings_schema`, settings forms are driven by `apps
 
 ## 7) API endpoints you will touch most
 
-- `GET /api/v2/tickets`
+- `GET /api/v2/tickets` (query `view=my|unassigned|all|archive` — active views exclude `solved`/`closed`; `archive` is solved+closed only, org-wide)
 - `POST /api/v2/tickets`
 - `GET /api/v2/tickets/:ticketId`
 - `PATCH /api/v2/tickets/:ticketId`
@@ -144,7 +175,15 @@ If you were expecting `apps.settings_schema`, settings forms are driven by `apps
 - `GET /api/v2/apps/:appId/settings`
 - `PUT /api/v2/apps/:appId/settings`
 - `POST /api/v2/admin/webhooks`
-- `PATCH /api/v2/admin/webhooks/:webhookId/inspection`
+- `PATCH /api/v2/admin/webhooks/:webhookId/inspection` (stores **payload template** per webhook + event)
+
+### Webhook POST body (macros)
+
+Deliveries are built by the **`webhook-deliver`** Edge Function. The body is JSON produced from the **payload template** saved on the Webhooks page (or the built-in default if you never saved one).
+
+- Use placeholders like `{{event_name}}`, `{{ticket.subject}}`, `{{ticket.id}}`, etc. Each macro expands to a **JSON literal** (e.g. a string value becomes quoted automatically) — **do not** wrap macros in extra quotes inside the template.
+- If the template does not expand to valid JSON, ZenGarden sends a small error-shaped JSON payload instead (see delivery logs).
+- Full macro list and a live preview (sample ticket) are on **`/webhooks`** in the app.
 
 ## 8) Troubleshooting
 

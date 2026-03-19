@@ -5,41 +5,48 @@ import Link from "next/link";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { AppsAddPresets } from "@/components/apps/apps-add-presets";
 
 type AppRow = { id: string; name: string; version: string; location: string; iframe_url: string };
 
-export function AppsClient() {
+export function AppsClient({ canAddApps }: { canAddApps: boolean }) {
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
   const [apps, setApps] = React.useState<AppRow[]>([]);
 
-  React.useEffect(() => {
-    let cancelled = false;
-    async function load() {
-      setLoading(true);
-      setError(null);
-      try {
-        const supabase = getSupabaseBrowserClient();
-        const { data, error: qErr } = await supabase.from("apps").select("id,name,version,location,iframe_url").order("created_at", { ascending: false });
-        if (qErr) throw qErr;
-        if (!cancelled) setApps((data ?? []) as AppRow[]);
-      } catch (err) {
-        if (!cancelled) setError(err instanceof Error ? err.message : "Failed to load apps");
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
+  const loadApps = React.useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const supabase = getSupabaseBrowserClient();
+      const { data, error: qErr } = await supabase
+        .from("apps")
+        .select("id,name,version,location,iframe_url")
+        .order("created_at", { ascending: false });
+      if (qErr) throw qErr;
+      setApps((data ?? []) as AppRow[]);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to load apps");
+    } finally {
+      setLoading(false);
     }
-    load();
-    return () => {
-      cancelled = true;
-    };
   }, []);
+
+  React.useEffect(() => {
+    void loadApps();
+  }, [loadApps]);
 
   return (
     <div className="p-4">
-      <div className="mb-4">
-        <h1 className="text-xl font-semibold">Apps</h1>
-        <p className="text-sm text-muted-foreground">Open installed apps in a sandboxed iframe.</p>
+      <div className="mb-4 flex items-start justify-between gap-3">
+        <div>
+          <h1 className="text-xl font-semibold">Apps</h1>
+          <p className="text-sm text-muted-foreground">Open installed apps in a sandboxed iframe.</p>
+          {!canAddApps ? (
+            <p className="mt-1 text-xs text-muted-foreground">Only organization admins can install new apps (Admin page or + on this screen).</p>
+          ) : null}
+        </div>
+        <AppsAddPresets canAddApps={canAddApps} onAdded={() => void loadApps()} />
       </div>
 
       <Card className="p-4">

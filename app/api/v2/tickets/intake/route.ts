@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { requireAuth } from "@/lib/api/require-auth";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
-import { dispatchTicketEventToAutomation, dispatchTicketEventToWebhooks, type TicketEvent } from "@/lib/webhooks/dispatch";
+import { dispatchTicketSideEffects, type TicketEvent } from "@/lib/webhooks/dispatch";
 import type { TicketPriority } from "@/lib/tickets/types";
 
 const SupportFormSchema = z.object({
@@ -121,8 +121,11 @@ export async function POST(req: Request) {
   }
 
   const event: TicketEvent = "created";
-  await dispatchTicketEventToWebhooks({ organizationId: me.organization_id, ticketId: createdTicket.id, event });
-  await dispatchTicketEventToAutomation({ ticketId: createdTicket.id, event });
+  await dispatchTicketSideEffects({
+    organizationId: me.organization_id,
+    ticketId: createdTicket.id,
+    event
+  });
 
   return NextResponse.json(
     { ok: true, ticket_id: createdTicket.id, channel: intake.channel },

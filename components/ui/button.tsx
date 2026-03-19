@@ -13,13 +13,27 @@ const variantClasses: Record<ButtonVariant, string> = {
   destructive: "bg-red-600 text-white hover:opacity-90"
 };
 
-export function Button({
-  className,
-  variant = "default",
-  asChild = false,
-  ...props
-}: React.ButtonHTMLAttributes<HTMLButtonElement> & { variant?: ButtonVariant; asChild?: boolean }) {
-  const Comp: any = asChild ? Slot : "button";
-  return <Comp className={clsx("inline-flex items-center justify-center rounded-md px-3 py-2 text-sm font-medium transition-colors", variantClasses[variant], className)} {...props} />;
-}
+export type ButtonProps = React.ButtonHTMLAttributes<HTMLButtonElement> & {
+  variant?: ButtonVariant;
+  asChild?: boolean;
+};
+
+export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(function Button(
+  { className, variant = "default", asChild = false, type = "button", ...props },
+  ref
+) {
+  const Comp: React.ElementType = asChild ? Slot : "button";
+  return (
+    <Comp
+      ref={ref}
+      type={asChild ? undefined : type}
+      className={clsx(
+        "inline-flex items-center justify-center rounded-md px-3 py-2 text-sm font-medium transition-colors",
+        variantClasses[variant],
+        className
+      )}
+      {...props}
+    />
+  );
+});
 

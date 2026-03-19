@@ -26,7 +26,7 @@ export function TicketsClient({ canSeed }: { canSeed: boolean }) {
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
   const [tickets, setTickets] = React.useState<Ticket[]>([]);
-  const [view, setView] = React.useState<"my" | "unassigned" | "all">("my");
+  const [view, setView] = React.useState<"my" | "unassigned" | "all" | "archive">("my");
   const canWrite = canSeed;
   const [success, setSuccess] = React.useState<{ message: string; ticketId: string } | null>(null);
 
@@ -41,7 +41,7 @@ export function TicketsClient({ canSeed }: { canSeed: boolean }) {
   const [emailBody, setEmailBody] = React.useState("");
   const [creatingEmail, setCreatingEmail] = React.useState(false);
 
-  async function loadTickets(currentView: "my" | "unassigned" | "all") {
+  async function loadTickets(currentView: "my" | "unassigned" | "all" | "archive") {
     setLoading(true);
     setError(null);
     try {
@@ -183,7 +183,13 @@ export function TicketsClient({ canSeed }: { canSeed: boolean }) {
       <div className="mb-4 flex items-center justify-between">
         <div>
           <h1 className="text-xl font-semibold">
-            {view === "my" ? "My Tickets" : view === "unassigned" ? "Unassigned" : "All Tickets"}
+            {view === "my"
+              ? "My Tickets"
+              : view === "unassigned"
+                ? "Unassigned"
+                : view === "archive"
+                  ? "Solved / closed"
+                  : "All Tickets"}
           </h1>
           <p className="text-sm text-muted-foreground">Ticket sandbox for Zendesk app development.</p>
           {liveDemoMode ? (
@@ -203,7 +209,7 @@ export function TicketsClient({ canSeed }: { canSeed: boolean }) {
         </div>
       </div>
 
-      <div className="mb-4 flex gap-2">
+      <div className="mb-4 flex flex-wrap gap-2">
         <Button variant={view === "my" ? "default" : "secondary"} onClick={() => setView("my")} disabled={loading}>
           My Tickets
         </Button>
@@ -216,6 +222,9 @@ export function TicketsClient({ canSeed }: { canSeed: boolean }) {
         </Button>
         <Button variant={view === "all" ? "default" : "secondary"} onClick={() => setView("all")} disabled={loading}>
           All
+        </Button>
+        <Button variant={view === "archive" ? "default" : "secondary"} onClick={() => setView("archive")} disabled={loading}>
+          Solved / closed
         </Button>
       </div>
 
@@ -363,7 +372,11 @@ export function TicketsClient({ canSeed }: { canSeed: boolean }) {
               ))}
             </div>
           ) : (
-            <div className="text-sm text-muted-foreground">No tickets yet. Seed demo mode to get started.</div>
+            <div className="text-sm text-muted-foreground">
+              {view === "archive"
+                ? "No solved or closed tickets yet. They appear here once status is solved or closed."
+                : "No open tickets in this view. Seed demo or create tickets via intake above."}
+            </div>
           )
         ) : null}
       </Card>

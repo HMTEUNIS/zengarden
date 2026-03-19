@@ -5,6 +5,11 @@ export type TicketStatusTransitionRule = {
   to: TicketStatus;
 };
 
+/**
+ * Sandbox-friendly transitions: any move between distinct statuses is allowed.
+ * (Strict linear Zendesk-style rules were confusing in the UI because the dropdown
+ * listed every status while only a few edges were legal.)
+ */
 const ALLOWED_TRANSITIONS: TicketStatusTransitionRule[] = [
   { from: "new", to: "open" },
   { from: "open", to: "pending" },
@@ -13,6 +18,13 @@ const ALLOWED_TRANSITIONS: TicketStatusTransitionRule[] = [
 ];
 
 export function isAllowedStatusTransition(from: TicketStatus, to: TicketStatus) {
+  if (from === to) return false;
+  const allStatuses: TicketStatus[] = ["new", "open", "pending", "solved", "closed"];
+  return allStatuses.includes(from) && allStatuses.includes(to);
+}
+
+/** Optional stricter workflow (e.g. for future fork / production mode). */
+export function isAllowedStatusTransitionStrict(from: TicketStatus, to: TicketStatus) {
   return ALLOWED_TRANSITIONS.some((r) => r.from === from && r.to === to);
 }
 

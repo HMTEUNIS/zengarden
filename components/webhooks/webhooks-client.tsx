@@ -6,6 +6,13 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  DEFAULT_WEBHOOK_PAYLOAD_TEMPLATE,
+  expandWebhookPayloadTemplate,
+  parseExpandedWebhookBody,
+  SAMPLE_TICKET_FOR_PREVIEW,
+  WEBHOOK_PAYLOAD_MACRO_HELP
+} from "@/lib/webhooks/payload-template";
 
 type WebhookEvent = "created" | "updated" | "solved";
 
@@ -106,12 +113,27 @@ function WebhooksClientInternal({ canWrite }: { canWrite: boolean }) {
   React.useEffect(() => {
     if (!currentInspection) {
       setInspectionLanguage("json");
-      setInspectionCode("");
+      setInspectionCode(DEFAULT_WEBHOOK_PAYLOAD_TEMPLATE);
       return;
     }
     setInspectionLanguage(currentInspection.language ?? "json");
     setInspectionCode(currentInspection.code ?? "");
   }, [currentInspection]);
+
+  const previewExpanded = React.useMemo(() => {
+    try {
+      const raw = expandWebhookPayloadTemplate(
+        inspectionCode.trim() || DEFAULT_WEBHOOK_PAYLOAD_TEMPLATE,
+        selectedEvent,
+        SAMPLE_TICKET_FOR_PREVIEW
+      );
+      const parsed = parseExpandedWebhookBody(raw);
+      if (!parsed.ok) return `Invalid JSON after macro expansion: ${parsed.error}`;
+      return JSON.stringify(parsed.value, null, 2);
+    } catch (e) {
+      return e instanceof Error ? e.message : "Preview failed";
+    }
+  }, [inspectionCode, selectedEvent]);
 
   async function createWebhook() {
     setError(null);
@@ -154,7 +176,7 @@ function WebhooksClientInternal({ canWrite }: { canWrite: boolean }) {
 
     try {
       if (!canWrite) throw new Error("Read-only mode: demo users cannot save inspection snippets.");
-      if (!inspectionCode.trim()) throw new Error("Code snippet is required");
+      if (!inspectionCode.trim()) throw new Error("Payload template is required");
 
       const res = await fetch(`/api/v2/admin/webhooks/${selectedWebhookId}/inspection`, {
         method: "PATCH",
@@ -259,38 +281,54 @@ function WebhooksClientInternal({ canWrite }: { canWrite: boolean }) {
 
       <div className="mt-4">
         <Card className="p-4">
-          <div className="mb-3 text-sm font-medium">Inspect webhooks (dev-visible code block)</div>
-          <div className="mb-3 text-sm text-muted-foreground">
-            Add the payload/code you expect this webhook to receive for the selected event. This lets you demo integration behavior without guesswork.
+          <div className="mb-3 text-sm font-medium">Webhook payload template (JSON + macros)</div>
+          <div className="mb-3 space-y-2 text-sm text-muted-foreground">
+            <p>
+              This template becomes the <strong>HTTP POST body</strong> ZenGarden sends to your <code className="rounded bg-muted px-1">target_url</code> when
+              the event fires. Use macros for ticket fields — each expands to a JSON literal (do <strong>not</strong> wrap macros in extra quotes).
+            </p>
+            <pre className="whitespace-pre-wrap rounded border bg-muted/50 p-3 text-xs text-foreground">{WEBHOOK_PAYLOAD_MACRO_HELP}</pre>
           </div>
 
           {selectedWebhookId ? (
-            <div className="grid gap-4 md:grid-cols-[1fr,360px]">
+            <div className="grid gap-4 md:grid-cols-[1fr,380px]">
               <div className="space-y-3">
-                <Label>Language</Label>
-                <Input value={inspectionLanguage} onChange={(e) => setInspectionLanguage(e.target.value)} />
-                <Label>Code snippet</Label>
+                <Label>Language label (optional)</Label>
+                <Input value={inspectionLanguage} onChange={(e) => setInspectionLanguage(e.target.value)} placeholder="json" />
+                <Label>Payload template</Label>
                 <textarea
-                  className="min-h-[240px] w-full rounded-md border border-border bg-background p-2 text-sm font-mono"
+                  className="min-h-[280px] w-full rounded-md border border-border bg-background p-2 text-sm font-mono"
                   value={inspectionCode}
                   onChange={(e) => setInspectionCode(e.target.value)}
-                  placeholder={`// Example payload for event: ${selectedEvent}\n{ ... }`}
+                  placeholder={DEFAULT_WEBHOOK_PAYLOAD_TEMPLATE}
                 />
-        <Button onClick={() => void saveInspection()} disabled={loading || !canWrite} className="w-full">
-                  Save inspection snippet
-                </Button>
+                <div className="flex flex-wrap gap-2">
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    onClick={() => setInspectionCode(DEFAULT_WEBHOOK_PAYLOAD_TEMPLATE)}
+                    disabled={!canWrite}
+                  >
+                    Reset to default template
+                  </Button>
+                  <Button onClick={() => void saveInspection()} disabled={loading || !canWrite} className="flex-1 min-w-[12rem]">
+                    Save payload template
+                  </Button>
+                </div>
               </div>
 
               <div className="space-y-3">
-                <div className="text-sm font-medium">Preview</div>
-                <pre className="rounded border bg-muted p-3 text-xs whitespace-pre-wrap">{inspectionCode || "// Nothing saved yet."}</pre>
+                <div className="text-sm font-medium">Preview (sample ticket + selected event)</div>
+                <pre className="max-h-[min(60vh,420px)] overflow-auto rounded border bg-muted p-3 text-xs whitespace-pre-wrap">
+                  {previewExpanded}
+                </pre>
                 <div className="text-xs text-muted-foreground">
-                  Webhook: {selectedWebhook?.name ?? "-"} · Event: {selectedEvent}
+                  Webhook: {selectedWebhook?.name ?? "-"} · Event: {selectedEvent}. Real deliveries use the live ticket from the database.
                 </div>
               </div>
             </div>
           ) : (
-            <div className="text-sm text-muted-foreground">Create/select a webhook to attach an inspection snippet.</div>
+            <div className="text-sm text-muted-foreground">Create or select a webhook to edit the payload template.</div>
           )}
         </Card>
       </div>

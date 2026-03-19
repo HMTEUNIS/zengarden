@@ -1,6 +1,10 @@
 import { serve } from "https://deno.land/std/http/server.ts";
 import { getSupabaseAdminClient } from "../_shared/supabaseAdmin.ts";
 import { hmacSha256Hex } from "../_shared/crypto.ts";
+import {
+  DEFAULT_WEBHOOK_PAYLOAD_TEMPLATE,
+  expandWebhookPayloadTemplate
+} from "../_shared/webhookPayloadExpand.ts";
 
 type WebhookDeliverRequest = {
   webhook_id: string;
@@ -59,10 +63,53 @@ serve(async (req) => {
     if (webhookErr) throw webhookErr;
     if (!webhook || !webhook.active) return jsonResponse({ error: "Webhook not found or inactive" }, 404);
 
-    const requestPayload = {
-      event_name: reqJson.event_name,
-      payload: reqJson.payload ?? null
-    };
+    const rawPayload = reqJson.payload as Record<string, unknown> | null | undefined;
+    const ticketId = typeof rawPayload?.ticket_id === "string" ? rawPayload.ticket_id : null;
+
+    let ticketRow: Record<string, unknown> | null = null;
+    if (ticketId) {
+      const { data: t, error: tErr } = await supabase
+        .from("tickets")
+        .select(
+          "id,subject,description,type,status,priority,tags,requester_id,assignee_id,organization_id,created_at,updated_at"
+        )
+        .eq("id", ticketId)
+        .maybeSingle();
+      if (tErr) throw tErr;
+      if (!t) {
+        return jsonResponse({ error: "Ticket not found for webhook payload" }, 404);
+      }
+      if (t.organization_id !== webhook.organization_id) {
+        return jsonResponse({ error: "Ticket organization mismatch" }, 403);
+      }
+      ticketRow = t as Record<string, unknown>;
+    }
+
+    const { data: inspection } = await supabase
+      .from("webhook_inspections")
+      .select("code")
+      .eq("webhook_id", webhook.id)
+      .eq("event_name", reqJson.event_name)
+      .maybeSingle();
+
+    const template =
+      inspection?.code && String(inspection.code).trim().length > 0
+        ? String(inspection.code).trim()
+        : DEFAULT_WEBHOOK_PAYLOAD_TEMPLATE;
+
+    const expanded = expandWebhookPayloadTemplate(template, reqJson.event_name, ticketRow);
+
+    let requestPayload: unknown;
+    try {
+      requestPayload = JSON.parse(expanded);
+    } catch {
+      requestPayload = {
+        event_name: reqJson.event_name,
+        ticket_id: ticketId,
+        error: "invalid_payload_template",
+        detail: "Saved template did not expand to valid JSON. Fix the Payload template on Webhooks."
+      };
+    }
 
     const requestBody = JSON.stringify(requestPayload);
 

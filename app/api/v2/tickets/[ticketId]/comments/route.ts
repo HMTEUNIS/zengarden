@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
 import { requireAuth } from "@/lib/api/require-auth";
-import { dispatchTicketEventToAutomation, dispatchTicketEventToWebhooks, type TicketEvent } from "@/lib/webhooks/dispatch";
+import { dispatchTicketSideEffects, type TicketEvent } from "@/lib/webhooks/dispatch";
 import type { TicketStatus } from "@/lib/tickets/types";
 
 const AddCommentSchema = z.object({
@@ -52,8 +52,11 @@ export async function POST(req: Request, { params }: { params: { ticketId: strin
   }
 
   const event: TicketEvent = ticket.status === "new" ? "updated" : "updated";
-  await dispatchTicketEventToWebhooks({ organizationId: me.organization_id, ticketId: params.ticketId, event });
-  await dispatchTicketEventToAutomation({ ticketId: params.ticketId, event });
+  await dispatchTicketSideEffects({
+    organizationId: me.organization_id,
+    ticketId: params.ticketId,
+    event
+  });
 
   return NextResponse.json({ ok: true }, { status: 201 });
 }

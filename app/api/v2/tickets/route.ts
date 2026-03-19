@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
 import { requireAuth } from "@/lib/api/require-auth";
-import { dispatchTicketEventToAutomation, dispatchTicketEventToWebhooks, type TicketEvent } from "@/lib/webhooks/dispatch";
+import { dispatchTicketSideEffects, type TicketEvent } from "@/lib/webhooks/dispatch";
 import type { TicketPriority, TicketStatus } from "@/lib/tickets/types";
 
 const TicketPrioritySchema = z.enum(["low", "normal", "high", "urgent"]);
@@ -22,8 +22,13 @@ export async function GET(req: Request) {
   if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: auth.status });
 
   const url = new URL(req.url);
-  const view = (url.searchParams.get("view") ?? "my") as "my" | "unassigned" | "all";
+  const viewRaw = url.searchParams.get("view") ?? "my";
+  const view = viewRaw as "my" | "unassigned" | "all" | "archive";
   const status = url.searchParams.get("status") as TicketStatus | null;
+
+  if (!["my", "unassigned", "all", "archive"].includes(view)) {
+    return NextResponse.json({ error: "Invalid view" }, { status: 400 });
+  }
 
   const supabase = getSupabaseServerClient();
   const { data: me } = await supabase.from("users").select("organization_id").eq("id", auth.user.id).single();
@@ -33,13 +38,19 @@ export async function GET(req: Request) {
   if (status) q = q.eq("status", status);
   q = q.eq("organization_id", me.organization_id).order("updated_at", { ascending: false }).limit(100);
 
+  // Active stack: hide terminal tickets. Archive stack: only solved + closed.
+  if (view === "archive") {
+    q = q.in("status", ["solved", "closed"]);
+  } else {
+    q = q.in("status", ["new", "open", "pending"]);
+  }
+
   if (view === "my") {
     q = q.or(`requester_id.eq.${auth.user.id},assignee_id.eq.${auth.user.id}`);
   } else if (view === "unassigned") {
     q = q.is("assignee_id", null);
-  } else if (view !== "all") {
-    return NextResponse.json({ error: "Invalid view" }, { status: 400 });
   }
+  // view === "all" | "archive": no requester/assignee filter (whole org, same org_id above)
 
   const { data, error } = await q;
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
@@ -82,8 +93,7 @@ export async function POST(req: Request) {
 
   // Side effects
   const event: TicketEvent = "created";
-  await dispatchTicketEventToWebhooks({ organizationId: me.organization_id, ticketId, event });
-  await dispatchTicketEventToAutomation({ ticketId, event });
+  await dispatchTicketSideEffects({ organizationId: me.organization_id, ticketId, event });
 
   return NextResponse.json({ ticket_id: ticketId }, { status: 201 });
 }

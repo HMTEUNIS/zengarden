@@ -202,3 +202,25 @@ ZenGarden is intentionally minimal: it is a foundation, not a complete product. 
 
 The ticket core, webhook pipeline, automation engine, and iframe app host provide a strong starting point.
 
+## 10) If this helped you
+
+If ZenGarden helped you ship a portfolio project, practice for interviews, or land a job — that’s awesome. If you want to say thanks, you’re welcome to [**buy me a coffee ☕**](https://buymeacoffee.com/hollyteunis).
+
+> **Note:** GitHub’s README viewer doesn’t run third-party `<script>` tags, so the button below won’t render here. The link above works everywhere. Use the snippet on your own site or docs if you want the embedded button.
+
+```html
+<script
+  type="text/javascript"
+  src="https://cdnjs.buymeacoffee.com/1.0.0/button.prod.min.js"
+  data-name="bmc-button"
+  data-slug="hollyteunis"
+  data-color="#FFDD00"
+  data-emoji="☕"
+  data-font="Cookie"
+  data-text="Buy me a coffee"
+  data-outline-color="#000000"
+  data-font-color="#000000"
+  data-coffee-color="#ffffff"
+></script>
+```
+
